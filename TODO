@@ -1,0 +1,74 @@
+# -*- mode: org; -*-
+* TODO =call-with-database=, etc. in an sqlite3-utils egg?
+  or too trivial? =column-names=, =column-types=, etc. seems useful.
+* TODO database->json
+  #+BEGIN_SRC scheme
+    (load "datagrid.scm")
+    (import datagrid)
+    (use json debug test)
+    
+    (let ((database (make-database
+                     file: "test.db"
+                     metadata: `(("b"
+                                  . (("a_id"
+                                      . ,(make-metadatum
+                                          foreign-key:
+                                          (make-foreign-key "a" "id")
+                                          enumeration:
+                                          '("1" "2" "3")))))))))
+      (let ((json (table->json database "b")))
+        (debug json)
+        (json-write json)
+        (test
+         "enumeration"
+         json
+         '#((grid . #((colModel #(("name" . "id")
+                                  ("index" . "id"))
+                                #(("name" . "a_id")
+                                  ("index" . "a_id")
+                                  ("edittype" . "select")
+                                  ("editoptions"
+                                   . #(("value" . #(("1" . "1")
+                                                    ("2" . "2")
+                                                    ("3" . "3")))))))))))))
+  #+END_SRC
+* TODO database objects
+  should be controllable by database objects that house unserializable
+  metadata (enums, keys, etc.)
+
+  the database object instantiates the CRUD AJAX and configuration
+  JSON given certain tables; who's responsible for whitelisting?
+
+  a liberal hook architecture, in which the caller provides hooks for
+  table whitelisting or (optionally) a list of tables; could provide
+  create, read, update, delete hooks (with appropriate data); such
+  that i could, for instance, add users, delete users (or not), change
+  user's name (or not), cache reports(which would require a database
+  connection, by the way; or else: given a chance to modify the data
+  before it's stored! or even bail out with an error! create the
+  report, for instance; modify the storage field; or 500 on
+  error). that's good!
+
+  (damn; have to be away from home to get the Wanderlust of
+  ideas. extra-domiciliate; undomesticate)
+
+  (One has to withdraw from home (be extra-domiciliated, so to speak),
+  to reachieve the Wanderlust of thought: that font of violent
+  ex-nihilo.)
+
+  =write-grid-to-table= actually handles the `RUD' of CRUD;
+  =read-grid-from-table= the `C'.
+
+  there appear to be somewhat clearcut points for abstraction, too; at
+  least for reading. table is hard-coded, though; and has to be
+  gleaned from the query, i think;
+
+  though we can configure it with database objects, has to flexible
+  enough to pivot on tables; therefore, metadata, for instance, has to
+  be a nested map: table -> field -> metadata.
+* TODO specifize
+  ad-hoc sqlite3, jqGrid implementation.
+* TODO generalize
+  to couchdb, say, or yui datatable.
+* TODO config also spawns a server
+  and should take, for instance, a table parameter.
