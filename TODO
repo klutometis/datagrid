@@ -1,7 +1,38 @@
 # -*- mode: org; -*-
 * TODO =call-with-database=, etc. in an sqlite3-utils egg?
   or too trivial? =column-names=, =column-types=, etc. seems useful.
-* TODO database->json
+* TODO foreign keys
+  we'll just construct an enumeration, basically; and pass off the
+  parser. oh, but we have a foreign-foreign key; one that comes from
+  far away: namely the accessioning database. nothing to be done
+  there; unless we want to ajax, for instance, the ids.
+
+  hmm; what generic mechanism could we come up with to do this?
+* TODO booleans
+  #+BEGIN_SRC scheme
+    (load "datagrid.scm")
+    (import datagrid)
+    (use json debug test)
+    
+    (let ((database (make-database
+                     file: "test.db"
+                     metadata: `(("b"
+                                  . (("a_id"
+                                      . ,(make-metadatum
+                                          foreign-key:
+                                          (make-foreign-key "a" "id")))))))))
+      (test
+       (table->json database "b")
+       '#((grid . #((colModel #(("name" . "id") ("index" . "id"))
+                              #(("name" . "a_id") ("index" . "a_id"))
+                              #(("name" . "b") ("index" . "b")
+                                (formatter . "checkbox")
+                                (edittype . "checkbox"))))))))
+  #+END_SRC
+* DONE database->json
+  CLOSED: [2010-07-03 Sat 19:45]
+  - CLOSING NOTE [2010-07-03 Sat 19:45] \\
+    have a beginning here; need booleans, foreign keys, etc.
   #+BEGIN_SRC scheme
     (load "datagrid.scm")
     (import datagrid)

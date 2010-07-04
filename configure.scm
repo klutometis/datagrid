@@ -2,8 +2,8 @@
   '#((grid . #((colModel . (%data column-model))))))
 
 (define type-parsers
-  '(("BOOLEAN" . (lambda (metadata) '((formatter . "checkbox")
-                                      (edittype . "checkbox"))))))
+  `(("BOOLEAN" . ,(lambda (metadata) '((formatter . "checkbox")
+                                       (edittype . "checkbox"))))))
 
 (define (type-parser type)
   (alist-ref type type-parsers string-ci=? (lambda x '())))
