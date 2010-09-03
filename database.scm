@@ -3,6 +3,7 @@
 ;;; index name, too? such that `ercc1_status' becomes `ERCC1 status',
 ;;; etc.
 (defstruct metadatum
+  (primary-key #f)
   (editable #t)
   (enumeration '())
   (foreign-key #f)
@@ -25,10 +26,3 @@
 
 (define (column-names db table)
   (map car (column-name-types db table)))
-
-(define (call-with-connection database procedure)
-  (let ((database (sqlite3:open-database database)))
-    (dynamic-wind
-        (lambda () #f)
-        (lambda () (procedure database))
-        (lambda () (sqlite3:finalize! database #t)))))

@@ -25,6 +25,7 @@
       defstruct
       json
       token-substitution
+      call-with-connection
       debug)
 
  (require-library sqlite3)              ; thanks, sjamaan

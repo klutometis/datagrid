@@ -1,5 +1,12 @@
 (define template
-  '#((grid . #((colModel . (%data column-model))))))
+  '#((grid . #((colModel . (%data column-model))
+               (pager . (%data pager))
+               (height . "auto")
+               (caption . (%data caption))
+               (url . (%data url))
+               (editurl . (%data edit-url))
+               (mtype: . "GET")
+               (datatype . "xml")))))
 
 (define type-parsers
   `(("BOOLEAN" . ,(lambda (metadata) '((formatter . "checkbox")
@@ -8,30 +15,44 @@
 (define (type-parser type)
   (alist-ref type type-parsers string-ci=? (lambda x '())))
 
-(define (parse-name name type metadatum)
+(define (parse-name connection name type metadatum)
   (list (cons "name" name)))
 
-(define (parse-index name type metadatum)
-  (list (cons "index" (or (metadatum-index metadatum) name))))
+(define (parse-editable connection name type metadatum)
+  (list (cons "editable" (and (not (metadatum-primary-key metadatum))
+                              (metadatum-editable metadatum)))))
 
-(define (parse-type name type metadatum)
-  (if (null? (metadatum-enumeration metadatum))
-      ((type-parser type) metadatum)
-      (parse-enumeration metadatum)))
+(define (parse-type connection name type metadatum)
+  (cond ((metadatum-foreign-key metadatum)
+         (parse-foreign-key connection (metadatum-foreign-key metadatum)))
+        ((null? (metadatum-enumeration metadatum))
+         ((type-parser type) metadatum))
+        (else
+         (parse-enumeration
+          (metadatum-enumeration metadatum)))))
 
-(define (parse-enumeration metadatum)
+(define (parse-foreign-key connection foreign-key)
+  (parse-enumeration
+   (map number->string
+        (sqlite3:map-row values
+                         connection
+                         (format "SELECT ~a FROM ~a;"
+                                 (foreign-key-column foreign-key)
+                                 (foreign-key-table foreign-key))))))
+
+(define (parse-enumeration enumeration)
   `(("edittype" . "select")
     ("editoptions" . #(("value"
                         . #(,@(map (lambda (value) (cons value value))
-                                   (metadatum-enumeration metadatum))))))))
+                                   enumeration)))))))
 
 (define column-parsers
   (list parse-name
-        parse-index
+        parse-editable
         parse-type))
 
-(define (parse-column name type metadatum)
-  `#(,@(append-map (lambda (parser) (parser name type metadatum))
+(define (parse-column connection name type metadatum)
+  `#(,@(append-map (lambda (parser) (parser connection name type metadatum))
                       column-parsers)))
 
 (define (metadata-ref column table database)
@@ -44,7 +65,7 @@
                string-ci=?
                (make-metadatum))))
 
-(define (table->json database table)
+(define (table->json database table caption-format pager url edit-url)
   (call-with-connection
    (database-file database)
    (lambda (connection)
@@ -54,13 +75,26 @@
                                  (let ((column (car column-type))
                                        (type (cdr column-type)))
                                    (let ((metadatum (metadata-ref column table database)))
-                                     (parse-column column type metadatum))))
-                               (column-name-types connection table))))))))
+                                     (parse-column connection column type metadatum))))
+                               (column-name-types connection table)))
+         (caption . ,(format caption-format table))
+         (pager . ,pager)
+         (url . ,url)
+         (edit-url . ,edit-url))))))
 
-(define (configure-grid database table)
-  (fcgi-dynamic-server-accept-loop
-   (lambda (in out err env)
-     (out "Content-type: application/json\r\n\r\n")
-     (out (with-output-to-string
-            (lambda ()
-              (json-write (table->json database table))))))))
+(define configure-grid
+  (case-lambda
+   ((database table url edit-url)
+    (configure-grid database table "~a" "#pager" url edit-url))
+   ((database table caption-format pager url edit-url)
+      (fcgi-dynamic-server-accept-loop
+       (lambda (in out err env)
+         (out "Content-type: application/json\r\n\r\n")
+         (out (with-output-to-string
+                (lambda ()
+                  (json-write (table->json database
+                                           table
+                                           caption-format
+                                           pager
+                                           url
+                                           edit-url))))))))))

@@ -49,7 +49,7 @@
           epsilon)
       epsilon))
 
-(define (read-grid-from-table db table)
+(define (read-grid-from-table connection table)
   (let ((select
          "SELECT * FROM ~A ~A ~A LIMIT ? OFFSET ?;")
         (count-rows
@@ -58,50 +58,48 @@
      (lambda (in out err env)
        (out content-header)
        (out xml-header)
-       (call-with-connection
-        db
-        (lambda (db)
-          (let ((query (form-urldecode (env "QUERY_STRING"))))
-            (let* ((column-names (column-names db table))
-                   (search-columns (search-columns column-names query))
-                   (where (where search-columns)))
-              (let ((rows (string->number (alist-ref 'rows query)))
-                    (page (string->number (alist-ref 'page query)))
-                    (sort-index (alist-ref 'sidx query))
-                    (sort-order (alist-ref 'sord query)))
-                (let ((order-by (order-by sort-index sort-order column-names))
-                      (search-values (search-values search-columns query)))
-                  (let ((select
-                         (sqlite3:prepare db (format select table where order-by)))
-                        (count-rows
-                         (sqlite3:prepare db (format count-rows table where))))
-                    (let* ((total-rows
-                            (apply sqlite3:first-result (cons count-rows search-values)))
-                           (total-pages
-                            (+ (inexact->exact
-                                (floor (/ (- total-rows 1)
-                                          rows)))
-                               1)))
-                      (let ((results
-                             (apply sqlite3:map-row
-                                    (append
-                                     (list
-                                      (lambda x
-                                        `(row (@ (id ,(->string (car x))))
-                                              ,(map
-                                                (lambda (result)
-                                                  `(cell ,(->string result)))
-                                                x)))
-                                      select)
-                                     search-values
-                                     (list
-                                      rows
-                                      (* rows (- page 1)))))))
-                        (out (shtml->html `(rows
-                                            (page ,(->string page))
-                                            (total ,(->string total-pages))
-                                            (records ,(->string total-rows))
-                                            ,results))))))))))))))))
+       (let ((query (form-urldecode (env "QUERY_STRING"))))
+         (let* ((column-names (column-names connection table))
+                (search-columns (search-columns column-names query))
+                (where (where search-columns)))
+           (let ((rows (string->number (alist-ref 'rows query)))
+                 (page (string->number (alist-ref 'page query)))
+                 (sort-index (alist-ref 'sidx query))
+                 (sort-order (alist-ref 'sord query)))
+             (let ((order-by (order-by sort-index sort-order column-names))
+                   (search-values (search-values search-columns query)))
+               (sqlite3:call-with-temporary-statements
+                (lambda (select count-rows)
+                  (let* ((total-rows
+                          (apply sqlite3:first-result (cons count-rows search-values)))
+                         (total-pages
+                          (+ (inexact->exact
+                              (floor (/ (- total-rows 1)
+                                        rows)))
+                             1)))
+                    (let ((results
+                           (apply sqlite3:map-row
+                                  (append
+                                   (list
+                                    (lambda x
+                                      `(row (@ (id ,(->string (car x))))
+                                            ,(map
+                                              (lambda (result)
+                                                `(cell ,(->string result)))
+                                              x)))
+                                    select)
+                                   search-values
+                                   (list
+                                    rows
+                                    (* rows (- page 1)))))))
+                      (out (shtml->html `(rows
+                                          (page ,(->string page))
+                                          (total ,(->string total-pages))
+                                          (records ,(->string total-rows))
+                                          ,results))))))
+                connection
+                (format select table where order-by)
+                (format count-rows table where))))))))))
 
 (define (set-columns column-names query)
   (lset-difference string-ci=?
@@ -114,7 +112,7 @@
        set-columns))
 
 ;;; may need poly-ary set-clause for add; also: respect oper?
-(define (write-grid-to-table db table)
+(define (write-grid-to-table connection table)
   (let ((update "UPDATE ~A ~A ~A;")
         (insert "INSERT INTO ~A (~A) VALUES(~A);")
         (delete "DELETE FROM ~A WHERE id = ?;"))
@@ -124,29 +122,38 @@
        (out xml-header)
        (let* ((query (form-urldecode (fcgi-get-post-data in env)))
               (operation (alist-ref 'oper query)))
-         (call-with-connection
-          db
-          (lambda (db)
-            (let* ((column-names (column-names db table))
-                   (set-columns (set-columns column-names query)))
-              (cond ((string-ci=? operation "edit")
-                     (let ((where (where '("id") "="))
-                           (set (set set-columns)))
-                       (let ((set-values (set-values set-columns query))
-                             (id (set-values '("id") query))
-                             (update (sqlite3:prepare db (format update table set where))))
-                         (apply sqlite3:execute (append (list update) set-values id)))))
-                    ((string-ci=? operation "add")
-                     (let ((columns (string-join set-columns ", "))
-                           (values (string-join
-                                    (map (lambda (set-column)
-                                           (format ":~A" set-column))
-                                         set-columns)
-                                    ", ")))
-                       (let ((insert (sqlite3:prepare db (format insert table columns values)))) 
-                         (apply sqlite3:execute (cons insert (set-values set-columns query))))))
-                    ((string-ci=? operation "del")
-                     (let* ((id (set-values '("id") query))
-                            (sqlite3:delete (sqlite3:prepare db (format delete table)))) 
-                       (apply sqlite3:execute (cons delete id)))))))))
+         (let* ((column-names (column-names connection table))
+                (set-columns (set-columns column-names query)))
+           (cond ((string-ci=? operation "edit")
+                  (let ((where (where '("id") "="))
+                        (set (set set-columns)))
+                    (let ((set-values (set-values set-columns query))
+                          (id (set-values '("id") query))
+                          (update (format update table set where)))
+                      (sqlite3:call-with-temporary-statements
+                       (lambda (update)
+                         (apply sqlite3:execute (append (list update) set-values id)))
+                       connection
+                       update))))
+                 ((string-ci=? operation "add")
+                  (let ((columns (string-join set-columns ", "))
+                        (values (string-join
+                                 (map (lambda (set-column)
+                                        (format ":~A" set-column))
+                                      set-columns)
+                                 ", ")))
+                    (let ((insert (format insert table columns values))) 
+                      (sqlite3:call-with-temporary-statements
+                       (lambda (insert)
+                         (apply sqlite3:execute (cons insert (set-values set-columns query))))
+                       connection
+                       insert))))
+                 ((string-ci=? operation "del")
+                  (let* ((id (set-values '("id") query))
+                         (delete (format delete table))) 
+                    (sqlite3:call-with-temporary-statements
+                     (lambda (delete)
+                       (apply sqlite3:execute (cons delete id)))
+                     connection
+                     delete))))))
        (out (shtml->html '(ok)))))))

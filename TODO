@@ -1,14 +1,51 @@
 # -*- mode: org; -*-
+* TODO constraints to adding data
+  what about NOT NULL, foreign-keys, etc.; should we refuse to
+  add/update given these constraints? must enforce them ourselves, i
+  think. or: sqlite3 has these update triggers, etc.
+
+  there are currently 64533 RNAIDs, by the way; fetching them
+  foreignly for every addition won't work, i think. can we fetch it
+  once at the beginning?
+* TODO minimum subset of options
+  allow the user to pass in additionals: pager, say; dialog box language?
+* TODO search
+* TODO caption
+  provide a format-string for the table
+* TODO the preview button is ad-hoc, by the way
+  need to come up with a generic mechanism for this? no. it can simply
+  be handled by the application, which makes its own mutations on the
+  datagrid. we merely supply the configuration, getters and setters.
+
+  hmm; but the pager is ad-hoc, too; we'll have to provide that, as
+  well. or can we assume: =#table=, =#pager=? no.
+
+  should, therefore, ship with a minimal, default example; which can
+  be extemporized upon.
 * TODO =call-with-database=, etc. in an sqlite3-utils egg?
   or too trivial? =column-names=, =column-types=, etc. seems useful.
-* TODO foreign keys
+* DONE foreign keys
+  CLOSED: [2010-07-03 Sat 23:38]
   we'll just construct an enumeration, basically; and pass off the
   parser. oh, but we have a foreign-foreign key; one that comes from
   far away: namely the accessioning database. nothing to be done
   there; unless we want to ajax, for instance, the ids.
 
   hmm; what generic mechanism could we come up with to do this?
-* TODO booleans
+
+  also: should the foreign keys be able to reference not only a
+  foreign table, but a foreign table from a foreign database? in that
+  case, we'll have to pass not the connection; but the database
+  itself, such that we can make a subsidiary connection.
+
+  for efficiency's sake, let's just pass the connection (confining
+  foreign keys to tables of the same database); if there's an actual
+  need, we can pass the whole database object and make connections to
+  a foreign database.
+* DONE primary keys not editable
+  CLOSED: [2010-07-03 Sat 23:11]
+* DONE booleans
+  CLOSED: [2010-07-03 Sat 23:10]
   #+BEGIN_SRC scheme
     (load "datagrid.scm")
     (import datagrid)
@@ -63,7 +100,8 @@
                                                     ("2" . "2")
                                                     ("3" . "3")))))))))))))
   #+END_SRC
-* TODO database objects
+* DONE database objects
+  CLOSED: [2010-07-03 Sat 23:11]
   should be controllable by database objects that house unserializable
   metadata (enums, keys, etc.)
 
@@ -97,9 +135,12 @@
   though we can configure it with database objects, has to flexible
   enough to pivot on tables; therefore, metadata, for instance, has to
   be a nested map: table -> field -> metadata.
-* TODO specifize
+* DONE specifize
+  CLOSED: [2010-07-03 Sat 23:11]
   ad-hoc sqlite3, jqGrid implementation.
-* TODO generalize
+* CANCELED generalize
+  CLOSED: [2010-07-03 Sat 23:11]
   to couchdb, say, or yui datatable.
-* TODO config also spawns a server
+* DONE config also spawns a server
+  CLOSED: [2010-07-03 Sat 23:11]
   and should take, for instance, a table parameter.
