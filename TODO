@@ -1,5 +1,58 @@
 # -*- mode: org; -*-
-* TODO constraints to adding data
+* TODO sqlite and concurrency
+  - http://www.mail-archive.com/sqlite-users@sqlite.org/msg37438.html
+    (in particular, it appears as though we have to respect
+    =SQLite_Busy=).
+  - http://www.mail-archive.com/sqlite-users@sqlite.org/msg37435.html
+    #+BEGIN_QUOTE
+    The only thing to keep in mind is to set the sqlite3_busy_timeout
+    and handle errors correctly.
+    #+END_QUOTE
+
+  unless =set-busy-handler!= on the connection also works for reads,
+  maybe we shouldn't have persistent connections; on the other hand,
+  maybe we should move to postgresql.
+
+  http://www.postgresql.org/docs/7.4/interactive/datatype.html
+
+  #+BEGIN_QUOTE
+  PostgreSQL has a rich set of native data types available to
+  users. Users may add new types to PostgreSQL using the CREATE TYPE
+  command.
+  #+END_QUOTE
+
+  jesus!
+* TODO editing hooks
+  what do we need: =update?=, =insert?= and =delete?= procedures;
+  along with some side-effect hooks update!, insert! and delete!?
+
+  if the edit-predicates return #f, what to do: give a message as
+  well? and (see below), how to communicate said message with jqGrid?
+
+  wrap =update?=, etc. within exception blocks; pass the message along
+  with a 399 if caught; otherwise, silently avoid writing on =#f=;
+  write on =#t=.
+* TODO communicate with jqGrid
+  messages and status somehow?
+
+  - http://stackoverflow.com/questions/1636580/how-can-i-get-jqgrid-to-recognize-server-sent-errors
+  - http://www.trirand.com/jqgridwiki/doku.php?id=wiki:events
+    (=loadError= for 400, 500, etc.; =loadComplete= to parse an
+    e.g. json response)
+  - http://efreedom.com/Question/1-2849189/Display-Nice-Error-Message-Something-Wrong-Ajax-Request-Jqgrid
+  - http://www.trirand.com/blog/?page_id=393/feature-request/more-error-handling-control-with-modal-edit-and-delete/
+  - http://stackoverflow.com/questions/3522165/how-to-pre-process-an-ajax-response-before-displaying-in-jqgrid
+  - http://stackoverflow.com/questions/3148320/add-an-event-handler-to-jqgrid-after-instantiation
+
+  =loadError= transmits the =status= and =statusText= of =xhr=; but
+  only when the status is 2xx or 3xx! weird.
+
+  returning a 399, for instance, while editing will automatically
+  display the error in the editing dialog and not update; if we return
+  a 200, however, and need to do some introspection: use the
+  =afterSubmit= edit event when creating the navGrid.
+* CANCELED constraints to adding data
+  CLOSED: [2010-09-07 Tue 18:08]
   what about NOT NULL, foreign-keys, etc.; should we refuse to
   add/update given these constraints? must enforce them ourselves, i
   think. or: sqlite3 has these update triggers, etc.
@@ -7,12 +60,16 @@
   there are currently 64533 RNAIDs, by the way; fetching them
   foreignly for every addition won't work, i think. can we fetch it
   once at the beginning?
-* TODO minimum subset of options
+* CANCELED minimum subset of options
+  CLOSED: [2010-09-07 Tue 18:08]
   allow the user to pass in additionals: pager, say; dialog box language?
-* TODO search
-* TODO caption
+* CANCELED search
+  CLOSED: [2010-09-07 Tue 18:08]
+* CANCELED caption
+  CLOSED: [2010-09-07 Tue 18:08]
   provide a format-string for the table
-* TODO the preview button is ad-hoc, by the way
+* CANCELED the preview button is ad-hoc, by the way
+  CLOSED: [2010-09-07 Tue 18:08]
   need to come up with a generic mechanism for this? no. it can simply
   be handled by the application, which makes its own mutations on the
   datagrid. we merely supply the configuration, getters and setters.
@@ -22,7 +79,8 @@
 
   should, therefore, ship with a minimal, default example; which can
   be extemporized upon.
-* TODO =call-with-database=, etc. in an sqlite3-utils egg?
+* DONE =call-with-database=, etc. in an sqlite3-utils egg?
+  CLOSED: [2010-09-07 Tue 18:08]
   or too trivial? =column-names=, =column-types=, etc. seems useful.
 * DONE foreign keys
   CLOSED: [2010-07-03 Sat 23:38]
