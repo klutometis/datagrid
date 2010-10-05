@@ -1,0 +1,18 @@
+((egg "datagrid.egg")
+ (license "Copyright (C) 2010: Response Genetics, Inc.")
+ (needs fastcgi
+        uri-common
+        htmlprag
+        foof-loop
+        defstruct
+        json
+        token-substitution
+        debug)
+ (test-depends test)
+ (author "Peter Danenberg")
+ (synopsis "Converting polytonic Greek from beta-code to unicode")
+ (files "datagrid.setup"
+        "ajax.scm"
+        "configure.scm"
+        "database.scm"
+        "datagrid.scm"))

@@ -1,0 +1,5 @@
+(include "setup-helper")
+
+(setup-shared-extension-module
+ 'datagrid
+ (extension-version 0.1))
