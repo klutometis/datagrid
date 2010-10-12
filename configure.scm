@@ -6,7 +6,9 @@
                (url . (%data url))
                (editurl . (%data edit-url))
                (mtype: . "GET")
-               (datatype . "xml")))))
+               (datatype . "xml")
+               (sortname . (%data sort-name))
+               (sortorder . (%data sort-order))))))
 
 (define type-parsers
   `(("BOOLEAN" . ,(lambda (metadata) '((formatter . "checkbox")
@@ -65,7 +67,14 @@
                string-ci=?
                (make-metadatum))))
 
-(define (table->json database table caption-format pager url edit-url)
+(define (table->json database
+                     table
+                     caption-format
+                     pager
+                     url
+                     edit-url
+                     sort-name
+                     sort-order)
   (call-with-connection
    (database-file database)
    (lambda (connection)
@@ -80,13 +89,15 @@
          (caption . ,(format caption-format table))
          (pager . ,pager)
          (url . ,url)
-         (edit-url . ,edit-url))))))
+         (edit-url . ,edit-url)
+         (sort-name . ,sort-name)
+         (sort-order . ,sort-order))))))
 
 (define configure-grid
   (case-lambda
    ((database table url edit-url)
-    (configure-grid database table "~a" "#pager" url edit-url))
-   ((database table caption-format pager url edit-url)
+    (configure-grid database table "~a" "#pager" url edit-url "id" "desc"))
+   ((database table caption-format pager url edit-url sort-name sort-order)
       (fcgi-dynamic-server-accept-loop
        (lambda (in out err env)
          (out "Content-type: application/json\r\n\r\n")
@@ -97,4 +108,6 @@
                                            caption-format
                                            pager
                                            url
-                                           edit-url))))))))))
+                                           edit-url
+                                           sort-name
+                                           sort-order))))))))))
