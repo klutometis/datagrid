@@ -1,6 +1,8 @@
 (define template
   '#((grid . #((colModel . (%data column-model))
                (pager . (%data pager))
+               ;; (forceFit . #t)
+               (shrinkToFit . #t)
                (height . "auto")
                (caption . (%data caption))
                (url . (%data url))
