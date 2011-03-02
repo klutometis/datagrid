@@ -29,9 +29,14 @@
          (parse-foreign-key connection (metadatum-foreign-key metadatum)))
         ((null? (metadatum-enumeration metadatum))
          ((type-parser type) metadatum))
+        ((metadatum-default metadatum)
+         (parse-default metadatum))
         (else
          (parse-enumeration
           (metadatum-enumeration metadatum)))))
+
+(define (parse-default metadatum)
+  `(("editoptions" . #(("value" . ,(metadatum-default metadatum))))))
 
 (define (parse-foreign-key connection foreign-key)
   (parse-enumeration

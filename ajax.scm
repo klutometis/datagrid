@@ -164,7 +164,7 @@
                         (let ((data (map cons set-columns set-values)))
                           (condition-case
                            ;; assuming the first id for simplicity
-                           (if (update? connection (car id) data)
+                           (if (update? connection (car id) data env)
                                (sqlite3:call-with-temporary-statements
                                 (lambda (update)
                                   (apply sqlite3:execute (append (list update) set-values id)))
@@ -182,7 +182,7 @@
                       (let* ((set-values (set-values set-columns query))
                              (data (map cons set-columns set-values)))
                         (condition-case
-                         (if (insert? connection data)
+                         (if (insert? connection data env)
                              (let ((insert (format insert table columns values))) 
                                (sqlite3:call-with-temporary-statements
                                 (lambda (insert)
@@ -196,7 +196,7 @@
                            (delete (format delete table))) 
                       (condition-case
                        ;; assuming the first id for simplicity
-                       (if (delete? connection (car id))
+                       (if (delete? connection (car id) env)
                            (sqlite3:call-with-temporary-statements
                             (lambda (delete)
                               (apply sqlite3:execute (cons delete id)))

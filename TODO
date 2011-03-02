@@ -1,4 +1,6 @@
 # -*- mode: org; -*-
+* TODO transition to pandora
+  and thence to postgresql.
 * TODO sqlite and concurrency
   - http://www.mail-archive.com/sqlite-users@sqlite.org/msg37438.html
     (in particular, it appears as though we have to respect
@@ -22,16 +24,6 @@
   #+END_QUOTE
 
   jesus!
-* TODO editing hooks
-  what do we need: =update?=, =insert?= and =delete?= procedures;
-  along with some side-effect hooks update!, insert! and delete!?
-
-  if the edit-predicates return #f, what to do: give a message as
-  well? and (see below), how to communicate said message with jqGrid?
-
-  wrap =update?=, etc. within exception blocks; pass the message along
-  with a 399 if caught; otherwise, silently avoid writing on =#f=;
-  write on =#t=.
 * TODO communicate with jqGrid
   messages and status somehow?
 
@@ -51,34 +43,21 @@
   display the error in the editing dialog and not update; if we return
   a 200, however, and need to do some introspection: use the
   =afterSubmit= edit event when creating the navGrid.
-* CANCELED constraints to adding data
-  CLOSED: [2010-09-07 Tue 18:08]
-  what about NOT NULL, foreign-keys, etc.; should we refuse to
-  add/update given these constraints? must enforce them ourselves, i
-  think. or: sqlite3 has these update triggers, etc.
+* DONE respect metadata defaults
+  CLOSED: [2011-03-01 Tue 20:56]
+* DONE editing hooks
+  CLOSED: [2011-03-01 Tue 20:56]
+  - CLOSING NOTE [2011-03-01 Tue 20:56] \\
+    so far, =update?= provides a sufficient hook.
+  what do we need: =update?=, =insert?= and =delete?= procedures;
+  along with some side-effect hooks update!, insert! and delete!?
 
-  there are currently 64533 RNAIDs, by the way; fetching them
-  foreignly for every addition won't work, i think. can we fetch it
-  once at the beginning?
-* CANCELED minimum subset of options
-  CLOSED: [2010-09-07 Tue 18:08]
-  allow the user to pass in additionals: pager, say; dialog box language?
-* CANCELED search
-  CLOSED: [2010-09-07 Tue 18:08]
-* CANCELED caption
-  CLOSED: [2010-09-07 Tue 18:08]
-  provide a format-string for the table
-* CANCELED the preview button is ad-hoc, by the way
-  CLOSED: [2010-09-07 Tue 18:08]
-  need to come up with a generic mechanism for this? no. it can simply
-  be handled by the application, which makes its own mutations on the
-  datagrid. we merely supply the configuration, getters and setters.
+  if the edit-predicates return #f, what to do: give a message as
+  well? and (see below), how to communicate said message with jqGrid?
 
-  hmm; but the pager is ad-hoc, too; we'll have to provide that, as
-  well. or can we assume: =#table=, =#pager=? no.
-
-  should, therefore, ship with a minimal, default example; which can
-  be extemporized upon.
+  wrap =update?=, etc. within exception blocks; pass the message along
+  with a 399 if caught; otherwise, silently avoid writing on =#f=;
+  write on =#t=.
 * DONE =call-with-database=, etc. in an sqlite3-utils egg?
   CLOSED: [2010-09-07 Tue 18:08]
   or too trivial? =column-names=, =column-types=, etc. seems useful.
@@ -196,9 +175,37 @@
 * DONE specifize
   CLOSED: [2010-07-03 Sat 23:11]
   ad-hoc sqlite3, jqGrid implementation.
-* CANCELED generalize
-  CLOSED: [2010-07-03 Sat 23:11]
-  to couchdb, say, or yui datatable.
 * DONE config also spawns a server
   CLOSED: [2010-07-03 Sat 23:11]
   and should take, for instance, a table parameter.
+* CANCELED constraints to adding data
+  CLOSED: [2010-09-07 Tue 18:08]
+  what about NOT NULL, foreign-keys, etc.; should we refuse to
+  add/update given these constraints? must enforce them ourselves, i
+  think. or: sqlite3 has these update triggers, etc.
+
+  there are currently 64533 RNAIDs, by the way; fetching them
+  foreignly for every addition won't work, i think. can we fetch it
+  once at the beginning?
+* CANCELED minimum subset of options
+  CLOSED: [2010-09-07 Tue 18:08]
+  allow the user to pass in additionals: pager, say; dialog box language?
+* CANCELED search
+  CLOSED: [2010-09-07 Tue 18:08]
+* CANCELED caption
+  CLOSED: [2010-09-07 Tue 18:08]
+  provide a format-string for the table
+* CANCELED the preview button is ad-hoc, by the way
+  CLOSED: [2010-09-07 Tue 18:08]
+  need to come up with a generic mechanism for this? no. it can simply
+  be handled by the application, which makes its own mutations on the
+  datagrid. we merely supply the configuration, getters and setters.
+
+  hmm; but the pager is ad-hoc, too; we'll have to provide that, as
+  well. or can we assume: =#table=, =#pager=? no.
+
+  should, therefore, ship with a minimal, default example; which can
+  be extemporized upon.
+* CANCELED generalize
+  CLOSED: [2010-07-03 Sat 23:11]
+  to couchdb, say, or yui datatable.
