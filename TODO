@@ -1,4 +1,5 @@
 # -*- mode: org; -*-
+* TODO respect REAL
 * TODO transition to pandora
   and thence to postgresql.
 * TODO sqlite and concurrency

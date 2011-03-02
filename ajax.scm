@@ -142,6 +142,7 @@
 ;;; may need poly-ary set-clause for add; also: respect oper?
 (define (write-grid-to-table connection
                              table
+                             modify-query
                              update?
                              insert?
                              delete?)
@@ -150,60 +151,61 @@
         (delete "DELETE FROM ~A WHERE id = ?;"))
     (fcgi-dynamic-server-accept-loop
      (lambda (in out err env)
-       (let* ((query (form-urldecode (fcgi-get-post-data in env)))
+       (let* ((query (modify-query (form-urldecode (fcgi-get-post-data in env))
+                                   env))
               (operation (alist-ref 'oper query)))
          (let* ((column-names (column-names connection table))
                 (set-columns (set-columns column-names query)))
-           (let ((data (map cons column-names set-columns)))
-             (cond ((string-ci=? operation "edit")
-                    (let ((where (where '("id") "="))
-                          (set (set set-columns)))
-                      (let ((set-values (set-values set-columns query))
-                            (id (set-values '("id") query))
-                            (update (format update table set where)))
-                        (let ((data (map cons set-columns set-values)))
-                          (condition-case
-                           ;; assuming the first id for simplicity
-                           (if (update? connection (car id) data env)
-                               (sqlite3:call-with-temporary-statements
-                                (lambda (update)
-                                  (apply sqlite3:execute (append (list update) set-values id)))
-                                connection
-                                update))
-                           (exn (exn)
-                                (out (error-header/exn exn jqgrid-error-code))))))))
-                   ((string-ci=? operation "add")
-                    (let ((columns (string-join set-columns ", "))
-                          (values (string-join
-                                   (map (lambda (set-column)
-                                          (format ":~A" set-column))
-                                        set-columns)
-                                   ", ")))
-                      (let* ((set-values (set-values set-columns query))
-                             (data (map cons set-columns set-values)))
+           (cond ((string-ci=? operation "edit")
+                  (let ((where (where '("id") "="))
+                        (set (set set-columns)))
+                    (let ((set-values (set-values set-columns query))
+                          (id (set-values '("id") query))
+                          (update (format update table set where)))
+                      (let ((data (map cons set-columns set-values)))
                         (condition-case
-                         (if (insert? connection data env)
-                             (let ((insert (format insert table columns values))) 
-                               (sqlite3:call-with-temporary-statements
-                                (lambda (insert)
-                                  (apply sqlite3:execute (cons insert set-values)))
-                                connection
-                                insert)))
+                         ;; assuming the first id for simplicity
+                         (if (update? connection (car id) data env)
+                             (sqlite3:call-with-temporary-statements
+                              (lambda (update)
+                                (apply sqlite3:execute
+                                       (append (list update) set-values id)))
+                              connection
+                              update))
                          (exn (exn)
-                            (out (error-header/exn exn jqgrid-error-code)))))))
-                   ((string-ci=? operation "del")
-                    (let* ((id (set-values '("id") query))
-                           (delete (format delete table))) 
+                              (out (error-header/exn exn jqgrid-error-code))))))))
+                 ((string-ci=? operation "add")
+                  (let ((columns (string-join set-columns ", "))
+                        (values (string-join
+                                 (map (lambda (set-column)
+                                        (format ":~A" set-column))
+                                      set-columns)
+                                 ", ")))
+                    (let* ((set-values (set-values set-columns query))
+                           (data (map cons set-columns set-values)))
                       (condition-case
-                       ;; assuming the first id for simplicity
-                       (if (delete? connection (car id) env)
-                           (sqlite3:call-with-temporary-statements
-                            (lambda (delete)
-                              (apply sqlite3:execute (cons delete id)))
-                            connection
-                            delete))
+                       (if (insert? connection data env)
+                           (let ((insert (format insert table columns values))) 
+                             (sqlite3:call-with-temporary-statements
+                              (lambda (insert)
+                                (apply sqlite3:execute (cons insert set-values)))
+                              connection
+                              insert)))
                        (exn (exn)
-                            (out (error-header/exn exn jqgrid-error-code))))))))))
+                            (out (error-header/exn exn jqgrid-error-code)))))))
+                 ((string-ci=? operation "del")
+                  (let* ((id (set-values '("id") query))
+                         (delete (format delete table))) 
+                    (condition-case
+                     ;; assuming the first id for simplicity
+                     (if (delete? connection (car id) env)
+                         (sqlite3:call-with-temporary-statements
+                          (lambda (delete)
+                            (apply sqlite3:execute (cons delete id)))
+                          connection
+                          delete))
+                     (exn (exn)
+                          (out (error-header/exn exn jqgrid-error-code)))))))))
        (out content-header)
        (out xml-header)
        (out (shtml->html '(ok)))))))

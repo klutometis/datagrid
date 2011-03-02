@@ -10,7 +10,7 @@
         debug)
  (test-depends test)
  (author "Peter Danenberg")
- (synopsis "Converting polytonic Greek from beta-code to unicode")
+ (synopsis "Database editor using jqGrid")
  (files "datagrid.setup"
         "ajax.scm"
         "configure.scm"
