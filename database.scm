@@ -7,7 +7,8 @@
   (editable #t)
   (enumeration '())
   (foreign-key #f)
-  (index #f))
+  (index #f)
+  (default #f))
 
 ;;; we can obey this constraint in the ui by enumerating the column;
 ;;; yet another metadatum: allow null?
