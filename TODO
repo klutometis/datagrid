@@ -1,5 +1,4 @@
 # -*- mode: org; -*-
-* TODO respect REAL
 * TODO transition to pandora
   and thence to postgresql.
 * TODO sqlite and concurrency
@@ -44,6 +43,8 @@
   display the error in the editing dialog and not update; if we return
   a 200, however, and need to do some introspection: use the
   =afterSubmit= edit event when creating the navGrid.
+* DONE respect REAL
+  CLOSED: [2011-03-02 Wed 00:38]
 * DONE respect metadata defaults
   CLOSED: [2011-03-01 Tue 20:56]
 * DONE editing hooks
