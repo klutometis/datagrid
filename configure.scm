@@ -14,7 +14,8 @@
 
 (define type-parsers
   `(("BOOLEAN" . ,(lambda (metadata) '((formatter . "checkbox")
-                                       (edittype . "checkbox"))))))
+                                       (edittype . "checkbox"))))
+    ("INTEGER" . ,(lambda (metadata) '((editrules . #(("integer" . #t))))))))
 
 (define (type-parser type)
   (alist-ref type type-parsers string-ci=? (lambda x '())))
