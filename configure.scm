@@ -84,7 +84,7 @@
                      edit-url
                      sort-name
                      sort-order)
-  (call-with-connection
+  (call-with-sqlite3-connection
    (database-file database)
    (lambda (connection)
      (substitute-tokens

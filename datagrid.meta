@@ -7,7 +7,8 @@
         defstruct
         json
         token-substitution
-        debug)
+        debug
+        call-with-sqlite3-connection)
  (test-depends test)
  (author "Peter Danenberg")
  (synopsis "Database editor using jqGrid")
